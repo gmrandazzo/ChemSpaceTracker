@@ -10,8 +10,7 @@ The main idea behind ChemSpaceTracker is to track similar molecules which can po
 The software is generally utilized in Virtual Screening or High Throughput Screening procedures to enhance the drug discovery success rate!
 
 
-![ScreenShot](https://github.com/gmrandazzo/PyLSS/blob/master/gui/pylssgui.png)
-
+![ScreenShot](https://github.com/gmrandazzo/ChemSpaceTracker/blob/master/src/cstlogo.png)
 
 License
 ============
