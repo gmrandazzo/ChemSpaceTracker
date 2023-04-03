@@ -118,7 +118,7 @@ QString SerializeMatrix(matrix *mx)
     return "NULL";
 }
 
-void DeserializeDVector(QString serialized_v, dvector **v)
+void DeserializeDVector(QString serialized_v, dvector *v)
 {
   if(serialized_v.size() > 0 && serialized_v.compare("NULL") != 0){
     QStringList _v_ = serialized_v.split(";");
@@ -126,7 +126,7 @@ void DeserializeDVector(QString serialized_v, dvector **v)
       DVectorAppend(v, _v_[i].toDouble());
   }
   else{
-    initDVector(v);
+    initDVector(&v);
   }
 }
 
@@ -331,9 +331,9 @@ void ReadGPSProject(QString filename, PCAMODEL **pcamodel,  QStringList *varname
   NewPCAModel(pcamodel);
   DeserializeMatrix(s_scores, &((*pcamodel)->scores));
   DeserializeMatrix(s_loadings, &((*pcamodel)->loadings));
-  DeserializeDVector(s_colavg, &((*pcamodel)->colaverage));
-  DeserializeDVector(s_colscaling, &((*pcamodel)->colscaling));
-  DeserializeDVector(s_colscaling, &((*pcamodel)->colscaling));
+  DeserializeDVector(s_colavg, (*pcamodel)->colaverage);
+  DeserializeDVector(s_colscaling, (*pcamodel)->colscaling);
+  DeserializeDVector(s_colscaling, (*pcamodel)->colscaling);
   (*varnames) = DeserializeQStringList(s_varnames);
   DeserializeMatrix(s_predscores, pscores);
   DeserializeSMIList(s_smilst, smilst);

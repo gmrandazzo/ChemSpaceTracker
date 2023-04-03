@@ -6,31 +6,10 @@ set(AUTHOR "Giuseppe Marco Randazzo")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC OFF)
 
-#set(_components
-#    Core
-#    Gui
-#    DBus
-#    Designer
-#    Declarative
-#    Script
-#    ScriptTools
-#    Network
-#    Test
-#    Xml
-#    Svg
-#    Sql
-#    Widgets
-#    PrintSupport
-#    Concurrent
-#    UiTools
-#    WebKit
-#    WebKitWidgets
-#    OpenGL)
-
 set(_components Core Gui Widgets PrintSupport Concurrent Svg Sql WebEngine WebEngineWidgets)
 foreach(_component ${_components})
-  find_package(Qt5${_component})
-  list(APPEND QT5_LIBRARIES ${Qt5${_component}_LIBRARIES})
+  find_package(Qt6${_component})
+  list(APPEND QT6_LIBRARIES ${Qt6${_component}_LIBRARIES})
 endforeach()
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules/")

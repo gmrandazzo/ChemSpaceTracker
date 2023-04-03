@@ -15,38 +15,17 @@ endif(NOT CMAKE_BUILD_TYPE)
 
 string(TOLOWER "${CMAKE_BUILD_TYPE}" cmake_build_type_tolower)
 
-#set(_components
-#    Core
-#    Gui
-#    DBus
-#    Designer
-#    Declarative
-#    Script
-#    ScriptTools
-#    Network
-#    Test
-#    Xml
-#    Svg
-#    Sql
-#    Widgets
-#    PrintSupport
-#    Concurrent
-#    UiTools
-#    WebKit
-#    WebKitWidgets
-#    OpenGL)
-
-set(_components Core Gui Widgets PrintSupport WebEngine WebEngineWidgets)
+set(_components Core Gui Widgets PrintSupport WebEngineWidgets)
 foreach(_component ${_components})
-  find_package(Qt5${_component} REQUIRED )
-  list(APPEND QT5_LIBRARIES ${Qt5${_component}_LIBRARIES})
+  find_package(Qt6${_component} REQUIRED )
+  list(APPEND QT6_LIBRARIES ${Qt6${_component}_LIBRARIES})
   if(cmake_build_type_tolower STREQUAL "release")
-    set_target_properties(${Qt5${_component}_LIBRARIES} PROPERTIES MAP_IMPORTED_CONFIG_COVERAGE "RELEASE")
+    set_target_properties(${Qt6${_component}_LIBRARIES} PROPERTIES MAP_IMPORTED_CONFIG_COVERAGE "RELEASE")
   endif()
 endforeach()
 
 
-add_definitions(${QT5_DEFINITIONS})
+add_definitions(${QT6_DEFINITIONS})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 
 if(WIN32)
@@ -83,7 +62,7 @@ set(QPLOTLY_H
 set(QPLOTLY_TEST_SRC testqplotly.cpp)
 
 # start building interface from moc
-QT5_WRAP_CPP(QPLOTLY_MOC_H ${QPLOTLY_H})
+QT6_WRAP_CPP(QPLOTLY_MOC_H ${QPLOTLY_H})
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${QT_USE_FILE})
 
@@ -92,13 +71,13 @@ add_library(libqplotly SHARED ${QPLOTLY_SRC} ${QPLOTLY_H} ${QPLOTLY_MOC_H})
 set_target_properties(libqplotly PROPERTIES OUTPUT_NAME "qplotly")
 
 if(WIN32)
-  target_link_libraries(libqplotly  ${QT5_LIBRARIES} Qt5::WinMain "-mwindows")
+  target_link_libraries(libqplotly  ${QT6_LIBRARIES} Qt6::WinMain "-mwindows")
 else()
-  target_link_libraries(libqplotly ${QT5_LIBRARIES})
+  target_link_libraries(libqplotly ${QT6_LIBRARIES})
 
 
   add_executable(testqplotly ${QPLOTLY_TEST_SRC})
-  target_link_libraries(testqplotly libqplotly ${QT5_LIBRARIES})
+  target_link_libraries(testqplotly libqplotly ${QT6_LIBRARIES})
 endif()
 
 # install(TARGETS libqplotly LIBRARY DESTINATION lib COMPONENT Libraries)

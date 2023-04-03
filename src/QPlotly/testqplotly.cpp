@@ -23,7 +23,7 @@
 #include <cmath>
 
 double uniform0to1Random() {
-    double r = qrand();
+    double r = rand();
     return r / ((double)RAND_MAX + 1);
 }
 
@@ -35,7 +35,7 @@ double randnum(double low, double high){
 void _3DRandomPlotExample(QPlotlyWindow *chart)
 {
   int npnt = 10000;
-  qsrand(npnt);
+  srand(npnt);
   for(int i = 0; i < npnt; i++){
     qreal x = (qreal)randnum(-0.01, 0.01);
     qreal y = (qreal)randnum(-0.01, 0.01);

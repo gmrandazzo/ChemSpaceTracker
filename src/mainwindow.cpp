@@ -143,8 +143,8 @@ void MainWindow::ImportMolecules()
           NewDVector(&v, desc.size());
           for(int j = 0; j < desc.size(); j++)
             v->data[j] = desc[j];
-          MatrixAppendRow(&mx, v);
-          MatrixAppendRow(&pdescriptors, v);
+          MatrixAppendRow(mx, v);
+          MatrixAppendRow(pdescriptors, v);
           DelDVector(&v);
           //EXTEND DATA STRUCTURE
           smilist.append(smilst_[i]);
@@ -158,14 +158,14 @@ void MainWindow::ImportMolecules()
     if(mx->row > 0){
       matrix *pscores_;
       initMatrix(&pscores_);
-      PCAScorePredictor(mx, m, 8, &pscores_);
+      PCAScorePredictor(mx, m, 8, pscores_);
       // EXTEND DATA STRUCTURE
       int x = ui->spinBox->value()-1;
       int y = ui->spinBox_2->value()-1;
       for(int i = 0; i < pscores_->row; i++){
         dvector *v = getMatrixRow(pscores_, i);
         chart->addPoint(pscores_->data[i][x], pscores_->data[i][y], smilist[prev_smilist_size+i].name, Qt::red, ui->moleculePointSize->value());
-        MatrixAppendRow(&pscores, v);
+        MatrixAppendRow(pscores, v);
         DelDVector(&v);
       }
       chart->Refresh();
@@ -622,7 +622,7 @@ void MainWindow::UpdateImageView()
         img->resize(342,313);
         img->setPixmap(pimages[indx].img);
         img->setScaledContents(true);
-        img->pixmap()->scaled(342, 313, Qt::KeepAspectRatioByExpanding);
+        img->pixmap().scaled(342, 313, Qt::KeepAspectRatioByExpanding);
         ui->tabWidget->addTab(img, pimages[indx].name);
       }
       else{
@@ -642,6 +642,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     vbox = new QVBoxLayout;
     chart = new QPlotlyWindow();
+    chart->setPlotTitle("");
     chart->setWindowTitle(QObject::tr("ChemSpace Tracker"));
     vbox->addWidget(chart);
     ui->plotwidget->setLayout(vbox);

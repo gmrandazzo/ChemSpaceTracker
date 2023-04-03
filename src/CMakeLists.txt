@@ -42,10 +42,10 @@ set(icon_RCC icons.qrc)
 
 # start building interface from moc
 #set(AUTOMOC_MOC_OPTIONS PROPERTIES FOLDER CMakeAutomocTargets)
-QT5_WRAP_CPP(CHEMSPACETRACKER_MOC_H ${CHEMSPACETRACKER_H})
-QT5_WRAP_UI(CHEMSPACETRACKER_UIS_H ${CHEMSPACETRACKER_UIS})
+QT6_WRAP_CPP(CHEMSPACETRACKER_MOC_H ${CHEMSPACETRACKER_H})
+QT6_WRAP_UI(CHEMSPACETRACKER_UIS_H ${CHEMSPACETRACKER_UIS})
 # generate rules for building source files from the resources
-QT5_ADD_RESOURCES(icon_RCC_SRCS ${icon_RCC})
+QT6_ADD_RESOURCES(icon_RCC_SRCS ${icon_RCC})
 
 source_group("Resources" FILES
   ${CHEMSPACETRACKER_UIS}
@@ -68,5 +68,5 @@ endif()
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(ChemSpaceTracker ${CHEMSPACETRACKER_SRC} ${CHEMSPACETRACKER_MOC_H} ${CHEMSPACETRACKER_UIS_H} ${icon_RCC_SRCS})
-target_link_libraries(ChemSpaceTracker ${LIBSCIENTIFIC_LIBRARY} libqplotly ${QT5_LIBRARIES} ${RDKIT_LIBRARIES})
+target_link_libraries(ChemSpaceTracker ${LIBSCIENTIFIC_LIBRARY} libqplotly ${QT6_LIBRARIES} ${RDKIT_LIBRARIES})
 install(TARGETS ChemSpaceTracker DESTINATION bin COMPONENT ApplicationData)
