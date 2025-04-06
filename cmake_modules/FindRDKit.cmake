@@ -1,11 +1,12 @@
 # FindRDKit.cmake
-# Placed in the public domain by NextMove Software in 2013
+# Based on public domain script by NextMove Software (2013), modified.
 # Try to find RDKit headers and libraries
 # Defines:
 #
 #  RDKIT_FOUND - system has RDKit
-#  RDKIT_INCLUDE_DIR - the RDKit include directory
-#  RDKIT_LIBRARIES - Link these to use RDKit
+#  RDKIT_INCLUDE_DIRS - the RDKit include directories (plural is preferred)
+#  RDKIT_LIBRARIES - Link these to use RDKit (list of libraries)
+#  RDKit::XXX targets (Optional, recommended for modern CMake)
 #
 # References:
 #
@@ -14,124 +15,273 @@
 
 include(FindPackageHandleStandardArgs)
 
-if(RDKIT_INCLUDE_DIR AND RDKIT_LIBRARIES)
-  # in cache already or user-specified
-  find_package_handle_standard_args(RDKit  DEFAULT_MSG
-                                  RDKIT_INCLUDE_DIR RDKIT_LIBRARIES)
+if(RDKIT_INCLUDE_DIR AND NOT RDKIT_INCLUDE_DIRS)
+  set(RDKIT_INCLUDE_DIRS ${RDKIT_INCLUDE_DIR})
+endif()
+
+if(RDKIT_INCLUDE_DIRS AND RDKIT_LIBRARIES)
+  find_package_handle_standard_args(RDKit DEFAULT_MSG
+                                    REQUIRED_VARS RDKIT_LIBRARIES RDKIT_INCLUDE_DIRS)
 else()
 
-  if(NOT RDKIT_INCLUDE_DIR)
+  if(NOT RDKIT_INCLUDE_DIRS)
+    set(RDKIT_INCLUDE_SEARCH_PATHS)
+    if(DEFINED ENV{RDKIT_INCLUDE_DIR})
+      list(APPEND RDKIT_INCLUDE_SEARCH_PATHS "$ENV{RDKIT_INCLUDE_DIR}")
+    endif()
+    if(DEFINED ENV{RDKIT_INCLUDE_PATH})
+      list(APPEND RDKIT_INCLUDE_SEARCH_PATHS "$ENV{RDKIT_INCLUDE_PATH}")
+    endif()
+     if(DEFINED ENV{RDKIT_BASE})
+      list(APPEND RDKIT_INCLUDE_SEARCH_PATHS "$ENV{RDKIT_BASE}/Code")
+    endif()
+    if(DEFINED ENV{RDBASE})
+      list(APPEND RDKIT_INCLUDE_SEARCH_PATHS "$ENV{RDBASE}/Code")
+    endif()
     if(WIN32)
-      find_path(RDKIT_INCLUDE_DIR GraphMol/RDKitBase.h
-        PATHS
-        ${RDBASE}\\Code
-        $ENV{RDKIT_INCLUDE_DIR}
-        $ENV{RDKIT_INCLUDE_PATH}
-        $ENV{RDKIT_BASE}\\Code
-        $ENV{RDBASE}\\Code
-        C:\\RDKit\\include
-        C:\\RDKit\\Code
-      )
+       list(APPEND RDKIT_INCLUDE_SEARCH_PATHS "C:/RDKit/include" "C:/RDKit/Code")
     else()
-      find_path(RDKIT_INCLUDE_DIR GraphMol/RDKitBase.h
-        PATHS
-          ${RDBASE}/Code
-          $ENV{RDKIT_INCLUDE_DIR}
-          $ENV{RDKIT_INCLUDE_PATH}
-          $ENV{RDKIT_BASE}/Code
-          $ENV{RDBASE}/Code
-	        /usr/include/rdkit
-          /usr/local/include/rdkit
-          /usr/local/rdkit/include/Code
-          /usr/local/rdkit/include
-          /usr/local/rdkit/Code
-          ~/rdkit/Code
-      )
+       list(APPEND RDKIT_INCLUDE_SEARCH_PATHS
+            "/usr/include/rdkit"
+            "/usr/local/include/rdkit"
+            "/usr/local/rdkit/include/Code"
+            "/usr/local/rdkit/include"
+            "/usr/local/rdkit/Code"
+            "$ENV{HOME}/rdkit/Code" # Use $ENV{HOME} for POSIX compatibility
+            "/opt/local/include/rdkit" # MacPorts
+            "/opt/homebrew/include/rdkit" # Homebrew ARM
+            "/usr/local/opt/rdkit/include" # Homebrew Intel
+       )
     endif()
-    if(RDKIT_INCLUDE_DIR)
-       message(STATUS "Found RDKit include files at ${RDKIT_INCLUDE_DIR}")
+
+    find_path(RDKIT_INCLUDE_DIR_FOUND # Use a temporary variable
+              NAMES GraphMol/RDKitBase.h
+              PATHS ${RDKIT_INCLUDE_SEARCH_PATHS}
+              # Search system paths last
+              PATH_SUFFIXES rdkit Code include/rdkit include/Code include
+             )
+
+    if(RDKIT_INCLUDE_DIR_FOUND)
+       set(RDKIT_INCLUDE_DIRS ${RDKIT_INCLUDE_DIR_FOUND}) # Set the final variable
+       message(STATUS "Found RDKit include files at: ${RDKIT_INCLUDE_DIRS}")
+    else()
+       message(STATUS "Could not find RDKit include directory. Considered paths: ${RDKIT_INCLUDE_SEARCH_PATHS}")
     endif()
+    mark_as_advanced(RDKIT_INCLUDE_DIR_FOUND) # Mark temporary variable advanced
   endif()
 
-  if(NOT RDKIT_LIBRARIES)
-    find_library(FILEPARSERS_LIB NAMES FileParsers
-      PATHS
-        ${RDBASE}/lib
-        $ENV{RDKIT_LIB_DIR}
-        $ENV{RDKIT_LIB_PATH}
-        $ENV{RDKIT_LIBRARIES}
-        $ENV{RDKIT_BASE}/lib
-        $ENV{RDBASE}/lib
-        /usr/local/rdkit/lib
-        ~/rdkit/lib
-        ${RDKIT_LIBRARY_DIR}
-        $ENV{LD_LIBRARY_PATH}
+  # We need the include directory to be found first
+  if(RDKIT_INCLUDE_DIRS AND NOT RDKIT_LIBRARIES)
 
-       #ignore default path, so search starts with above paths
-       NO_DEFAULT_PATH
+    # Construct library search paths
+    set(RDKIT_LIB_SEARCH_PATHS)
+    if(DEFINED ENV{RDKIT_LIB_DIR})
+        list(APPEND RDKIT_LIB_SEARCH_PATHS "$ENV{RDKIT_LIB_DIR}")
+    endif()
+    if(DEFINED ENV{RDKIT_LIB_PATH})
+        list(APPEND RDKIT_LIB_SEARCH_PATHS "$ENV{RDKIT_LIB_PATH}")
+    endif()
+    if(DEFINED ENV{RDKIT_LIBRARIES}) # This env var usually points to a dir
+        list(APPEND RDKIT_LIB_SEARCH_PATHS "$ENV{RDKIT_LIBRARIES}")
+    endif()
+    if(DEFINED ENV{RDKIT_BASE})
+        list(APPEND RDKIT_LIB_SEARCH_PATHS "$ENV{RDKIT_BASE}/lib")
+    endif()
+    if(DEFINED ENV{RDBASE})
+        list(APPEND RDKIT_LIB_SEARCH_PATHS "$ENV{RDBASE}/lib")
+    endif()
+    if(WIN32)
+        list(APPEND RDKIT_LIB_SEARCH_PATHS "C:/RDKit/lib")
+    else()
+        list(APPEND RDKIT_LIB_SEARCH_PATHS
+            "/usr/lib"
+            "/usr/lib64"
+            "/usr/local/lib"
+            "/usr/local/lib64"
+            "/usr/local/rdkit/lib"
+            "$ENV{HOME}/rdkit/lib"
+            "/opt/local/lib" # MacPorts
+            "/opt/homebrew/lib" # Homebrew ARM/Intel
+            "/usr/local/opt/rdkit/lib" # Older Homebrew Intel link
+        )
+    endif()
+    if(DEFINED ENV{LD_LIBRARY_PATH}) # Add LD_LIBRARY_PATH components (Linux/Unix)
+        string(REPLACE ":" ";" _ld_path_list "$ENV{LD_LIBRARY_PATH}")
+        list(APPEND RDKIT_LIB_SEARCH_PATHS ${_ld_path_list})
+    endif()
+     if(APPLE AND DEFINED ENV{DYLD_LIBRARY_PATH}) # Add DYLD_LIBRARY_PATH components (macOS)
+        string(REPLACE ":" ";" _dyld_path_list "$ENV{DYLD_LIBRARY_PATH}")
+        list(APPEND RDKIT_LIB_SEARCH_PATHS ${_dyld_path_list})
+    endif()
+
+    # Find a core library first to determine the library directory
+    find_library(RDGENERAL_LIB_FOUND # Use temp variable
+                 NAMES RDKitRDGeneral RDGeneral
+                 HINTS ${RDKIT_LIB_SEARCH_PATHS}
+                 )
+
+    if(RDGENERAL_LIB_FOUND)
+      GET_FILENAME_COMPONENT(RDKIT_LIBRARY_DIR ${RDGENERAL_LIB_FOUND} PATH)
+      message(STATUS "Found RDKit library directory: ${RDKIT_LIBRARY_DIR}")
+      # Add the found directory with high priority for subsequent searches
+      list(INSERT RDKIT_LIB_SEARCH_PATHS 0 ${RDKIT_LIBRARY_DIR})
+      list(REMOVE_DUPLICATES RDKIT_LIB_SEARCH_PATHS) # Clean up
+
+      set(RDKIT_COMPONENT_LIST
+          FileParsers
+          SmilesParse
+          MolTransforms
+          Descriptors
+          Fingerprints
+          MolChemicalFeatures
+          ChemicalFeatures
+          ChemTransforms
+          ChemReactions
+          SubstructMatch
+          FMCS
+          MolAlign
+          O3AAlign
+          ShapeHelpers
+          Depictor
+          MolDraw2D
+          ForceField
+          ForceFieldHelpers
+          MolStandardize
+          GraphMol
+          Subgraphs
+          DataStructs
+          Catalogs
+          FilterCatalog
+          ScaffoldNetwork
+          RGroupDecomposition
+          RDGeometryLib
+          RDGeneral
+          # Others from your list (add if needed)
+          # Abbreviations; Alignment; AvalonLib; CIPLabeler; Deprotect;
+          # DistGeomHelpers; DistGeometry; EHTLib; EigenSolvers; FreeSASALib;
+          # GeneralizedSubstruct; GenericGroups; InfoTheory; MMPA; MarvinParser;
+          # MolCatalog; MolEnumerator; MolHash; MolInteractionFields; MolInterchange;
+          # MolProcessing; Optimizer; PartialCharges; PubChemShape; RDBoost;
+          # RDInchiLib; RDStreams; RascalMCES; ReducedGraphs; RingDecomposerLib;
+          # SimDivPickers; SubstructLibrary; SynthonSpaceSearch; TautomerQuery; Trajectory;
+          # avalon_clib; freesasa_clib; ga; hc; pubchem_align3d
+          )
+
+      set(RDKIT_LIBRARIES_FOUND) # Initialize empty list for found library paths
+      foreach(COMPONENT ${RDKIT_COMPONENT_LIST})
+          # Construct names (e.g., RDKitGraphMol, GraphMol)
+          string(TOUPPER ${COMPONENT} COMPONENT_UPPER)
+          find_library(${COMPONENT_UPPER}_LIB # Variable name, e.g., GRAPHMOL_LIB
+                       NAMES RDKit${COMPONENT} ${COMPONENT} # Search names
+                       HINTS ${RDKIT_LIB_SEARCH_PATHS} # Use the refined search path list
+                       NO_DEFAULT_PATH # Avoid searching standard system paths again if HINTS cover them
+                       )
+          # If not found without default path, try again *with* default paths
+          if(NOT ${COMPONENT_UPPER}_LIB)
+               find_library(${COMPONENT_UPPER}_LIB
+                       NAMES RDKit${COMPONENT} ${COMPONENT}
+                       HINTS ${RDKIT_LIB_SEARCH_PATHS}
+                       # Implicitly uses default paths now
+                       )
+          endif()
+
+          if(${COMPONENT_UPPER}_LIB)
+              message(VERBOSE "Found RDKit component ${COMPONENT}: ${${COMPONENT_UPPER}_LIB}")
+              list(APPEND RDKIT_LIBRARIES_FOUND ${${COMPONENT_UPPER}_LIB})
+              mark_as_advanced(${COMPONENT_UPPER}_LIB) # Mark the individual lib variable
+          else()
+              message(STATUS "Warning: RDKit component library ${COMPONENT} not found. Searched names: RDKit${COMPONENT}, ${COMPONENT}. Searched paths: ${RDKIT_LIB_SEARCH_PATHS}")
+          endif()
+      endforeach()
+
+      # Remove duplicates (e.g., if MolChemicalFeatures and ChemicalFeatures point to the same file)
+      if(RDKIT_LIBRARIES_FOUND)
+          list(REMOVE_DUPLICATES RDKIT_LIBRARIES_FOUND)
+          set(RDKIT_LIBRARIES ${RDKIT_LIBRARIES_FOUND} CACHE STRING "List of RDKit libraries found" FORCE)
+          message(STATUS "Found RDKit libraries: ${RDKIT_LIBRARIES}")
+      endif()
+
+    else()
+      message(STATUS "Could not find core RDKit library (RDGeneral). Searched paths: ${RDKIT_LIB_SEARCH_PATHS}")
+    endif()
+    mark_as_advanced(RDGENERAL_LIB_FOUND RDKIT_LIBRARY_DIR)
+  endif()
+
+
+  find_package_handle_standard_args(RDKit
+                                  REQUIRED_VARS RDKIT_LIBRARIES RDKIT_INCLUDE_DIRS
+                                  # VERSION_VAR RDKIT_VERSION # Add if you can extract version
+                                  )
+
+  # Set RDKIT_INCLUDE_DIR for backward compatibility if needed, but prefer DIRS
+  if(RDKIT_INCLUDE_DIRS AND NOT RDKIT_INCLUDE_DIR)
+    list(GET RDKIT_INCLUDE_DIRS 0 RDKIT_INCLUDE_DIR)
+    set(RDKIT_INCLUDE_DIR ${RDKIT_INCLUDE_DIR} CACHE PATH "First RDKit include directory found")
+  endif()
+  mark_as_advanced(RDKIT_INCLUDE_DIR RDKIT_LIBRARIES RDKIT_INCLUDE_DIRS RDKIT_LIBRARY_DIR)
+
+endif()
+
+# This makes usage in the main CMakeLists.txt much cleaner
+if(RDKIT_FOUND AND NOT TARGET RDKit::RDGeneral) # Check if targets already created
+    # Add INTERFACE targets for headers-only aspects
+    add_library(RDKit::includes INTERFACE IMPORTED)
+    set_target_properties(RDKit::includes PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${RDKIT_INCLUDE_DIRS}"
     )
 
-    #run with default paths this time
-    find_library(FILEPARSERS_LIB NAMES FileParser RDKitFileParsers)
+    # This assumes a shared library build of RDKit, adjust if static
+    foreach(LIB_PATH ${RDKIT_LIBRARIES})
+        get_filename_component(LIB_NAME ${LIB_PATH} NAME_WE) # Name without lib prefix or extension
+        # Try to match LIB_NAME back to a component (this is imperfect)
+        string(REGEX REPLACE "^lib" "" COMPONENT_GUESS ${LIB_NAME}) # Remove lib prefix
+        string(REPLACE "RDKit" "" COMPONENT_GUESS ${COMPONENT_GUESS}) # Remove RDKit prefix
+        if (COMPONENT_GUESS)
+           if (NOT TARGET RDKit::${COMPONENT_GUESS})
+                add_library(RDKit::${COMPONENT_GUESS} UNKNOWN IMPORTED)
+                set_target_properties(RDKit::${COMPONENT_GUESS} PROPERTIES
+                    IMPORTED_LOCATION "${LIB_PATH}"
+                    INTERFACE_INCLUDE_DIRECTORIES "${RDKIT_INCLUDE_DIRS}" # Simplistic: link headers
+                    # Add INTERFACE_LINK_LIBRARIES for dependencies if known
+                )
+                # Basic dependency guess (most things depend on RDGeneral, GraphMol depends on RDGeneral etc.)
+                if (NOT COMPONENT_GUESS STREQUAL "RDGeneral")
+                    set_property(TARGET RDKit::${COMPONENT_GUESS} APPEND PROPERTY INTERFACE_LINK_LIBRARIES RDKit::RDGeneral)
+                endif()
+                if (COMPONENT_GUESS STREQUAL "GraphMol")
+                     # GraphMol might depend on DataStructs too, example:
+                     # set_property(TARGET RDKit::GraphMol APPEND PROPERTY INTERFACE_LINK_LIBRARIES RDKit::DataStructs)
+                endif()
+                # Add more specific dependencies here if you know them!
+                # Example: RDKit::MolChemicalFeatures might depend on RDKit::GraphMol
+                 if (TARGET RDKit::GraphMol AND (COMPONENT_GUESS STREQUAL "MolChemicalFeatures" OR COMPONENT_GUESS STREQUAL "ChemicalFeatures"))
+                      set_property(TARGET RDKit::${COMPONENT_GUESS} APPEND PROPERTY INTERFACE_LINK_LIBRARIES RDKit::GraphMol)
+                 endif()
 
-    if(FILEPARSERS_LIB)
-      GET_FILENAME_COMPONENT(RDKIT_LIBRARY_DIR ${FILEPARSERS_LIB} PATH)
-      message(STATUS "Found RDKit libraries at ${RDKIT_LIBRARY_DIR}")
+           else()
+              message(VERBOSE "Target RDKit::${COMPONENT_GUESS} already exists, skipping creation from ${LIB_PATH}")
+           endif()
+        else()
+             message(WARNING "Could not determine RDKit component name from library path: ${LIB_PATH}")
+        endif()
+    endforeach()
 
-      # Note that the order of the following libraries is significant!!
-      find_library(SMILESPARSE_LIB NAMES SmilesParse RDKitSmilesParse
-      HINTS ${RDKIT_LIBRARY_DIR})
-
-      find_library(DEPICTOR_LIB NAMES Depictor RDKitDepictor
-      HINTS ${RDKIT_LIBRARY_DIR})
-
-      find_library(MOLDRAW_LIB NAMES MolDraw2D MolDraw2DSVG RDKitMolDraw2D RDKitMolDraw2DSVG
-      HINTS ${RDKIT_LIBRARY_DIR})
-
-      find_library(GRAPHMOL_LIB NAMES GraphMol RDKitGraphMol
-      HINTS ${RDKIT_LIBRARY_DIR})
-
-      find_library(RDGEOMETRYLIB_LIB NAMES RDGeometryLib RDKitRDGeometryLib
-       HINTS ${RDKIT_LIBRARY_DIR})
-
-      find_library(RDGENERAL_LIB NAMES RDGeneral RDKitRDGeneral
-      HINTS ${RDKIT_LIBRARY_DIR})
-
-      find_library(RDDESCRIPTORS_LIB NAMES Descriptors RDKitDescriptors
-      HINTS ${RDKIT_LIBRARY_DIR})
-
-      #jhochuli - additional libraries for gninavis
-      find_library(SUBSTRUCTMATCH_LIB NAMES SubstructMatch
-      HINTS ${RDKIT_LIBRARY_DIR})
-
-      find_library(SUBGRAPHS_LIB NAME Subgraphs RDKitSubgraphs
-      HINTS ${RDKIT_LIBRARY_DIR})
-
-      find_library(DATASTRUCTS_LIB NAME DataStructs RDKitDataStructs
-      HINTS ${RDKIT_LIBRARY_DIR})
-
-      find_library(FORCEFILELDS_LIB NAME ForceField RDKitForceField
-      HINTS ${RDKIT_LIBRARY_DIR})
-
-      find_library(FORCEFILELDHELPERS_LIB NAME ForceFieldHelpers RDKitForceFieldHelpers
-      HINTS ${RDKIT_LIBRARY_DIR})
-
-      find_library(FINGERPRINT_LIB NAME Fingerprints RDKitFingerprints
-      HINTS ${RDKIT_LIBRARY_DIR})
-
-      set (RDKIT_LIBRARIES ${FILEPARSERS_LIB} ${SMILESPARSE_LIB}
-      ${RDDESCRIPTORS_LIB} ${SUBSTRUCT_MATCH_LIB} ${GRAPHMOL_LIB}
-      ${RDGEOMETRYLIB_LIB} ${RDGENERAL_LIB} ${SUBGRAPHS_LIB}
-      ${DATASTRUCTS_LIB} ${DEPICTOR_LIB} ${MOLDRAW_LIB}
-      ${FORCEFILELDS_LIB} ${FORCEFILELDHELPERS_LIB} ${FINGERPRINT_LIB}
-      )
+    # Add a convenience target linking common components
+    # Adjust this list based on your typical needs
+    if (TARGET RDKit::GraphMol AND TARGET RDKit::FileParsers AND TARGET RDKit::SmilesParse AND TARGET RDKit::MolChemicalFeatures)
+        add_library(RDKit::rdkit ALIAS RDKit::GraphMol) # Start with a base alias
+        # Example: Add common dependencies to an interface library
+        add_library(RDKit::common INTERFACE IMPORTED)
+        target_link_libraries(RDKit::common INTERFACE
+             RDKit::GraphMol
+             RDKit::FileParsers
+             RDKit::SmilesParse
+             RDKit::MolChemicalFeatures # Add the features lib here too
+             RDKit::Descriptors
+             RDKit::Fingerprints
+             # Add others as needed
+             RDKit::RDGeneral # Ensure base is linked
+        )
     endif()
-    if(RDKIT_LIBRARIES)
-            message(STATUS "Found RDKit library files at ${RDKIT_LIBRARIES}")
-    endif()
-  endif()
-
-  find_package_handle_standard_args(RDKit  DEFAULT_MSG
-                                  RDKIT_INCLUDE_DIR RDKIT_LIBRARIES)
-  mark_as_advanced(RDKIT_INCLUDE_DIR RDKIT_LIBRARIES RDKIT_LIBRARY_DIR)
 endif()
+

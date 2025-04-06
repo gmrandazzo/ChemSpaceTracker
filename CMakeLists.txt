@@ -1,5 +1,5 @@
 project(ChemSpaceTracker)
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5)
 set(VERSION "1.9.0")
 set(AUTHOR "Giuseppe Marco Randazzo")
 
@@ -63,7 +63,7 @@ include_directories(
   ${CMAKE_CURRENT_BINARY_DIR} #this is where ui_SimpleViewUI.h is generated
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${LIBSCIENTIFIC_INCLUDE_DIRS}
-  ${RDKIT_INCLUDE_DIR}
+  ${RDKIT_INCLUDE_DIRS}
 )
 
 
